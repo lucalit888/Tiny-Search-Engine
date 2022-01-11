@@ -1,0 +1,538 @@
+switchml () {  typeset swfound=1;
+ if [ "${MODULES_USE_COMPAT_VERSION:-0}" = '1' ]; then
+ typeset swname='main';
+ if [ -e /usr/share/Modules/libexec/modulecmd.tcl ]; then
+ typeset swfound=0;
+ unset MODULES_USE_COMPAT_VERSION;
+ fi;
+ else
+ typeset swname='compatibility';
+ if [ -e /usr/share/Modules/libexec/modulecmd-compat ]; then
+ typeset swfound=0;
+ MODULES_USE_COMPAT_VERSION=1;
+ export MODULES_USE_COMPAT_VERSION;
+ fi;
+ fi;
+ if [ $swfound -eq 0 ]; then
+ echo "Switching to Modules $swname version";
+ source /usr/share/Modules/init/bash;
+ else
+ echo "Cannot switch to Modules $swname version, command not found";
+ return 1;
+ fi
+}
+module () {  _module_raw "$@" 2>&1
+}
+_module_raw () {  unset _mlshdbg;
+ if [ "${MODULES_SILENT_SHELL_DEBUG:-0}" = '1' ]; then
+ case "$-" in 
+ *v*x*)
+ set +vx;
+ _mlshdbg='vx'
+ ;;
+ *v*)
+ set +v;
+ _mlshdbg='v'
+ ;;
+ *x*)
+ set +x;
+ _mlshdbg='x'
+ ;;
+ *)
+ _mlshdbg=''
+ ;;
+ esac;
+ fi;
+ unset _mlre _mlIFS;
+ if [ -n "${IFS+x}" ]; then
+ _mlIFS=$IFS;
+ fi;
+ IFS=' ';
+ for _mlv in ${MODULES_RUN_QUARANTINE:-};
+ do
+ if [ "${_mlv}" = "${_mlv##*[!A-Za-z0-9_]}" -a "${_mlv}" = "${_mlv#[0-9]}" ]; then
+ if [ -n "`eval 'echo ${'$_mlv'+x}'`" ]; then
+ _mlre="${_mlre:-}${_mlv}_modquar='`eval 'echo ${'$_mlv'}'`' ";
+ fi;
+ _mlrv="MODULES_RUNENV_${_mlv}";
+ _mlre="${_mlre:-}${_mlv}='`eval 'echo ${'$_mlrv':-}'`' ";
+ fi;
+ done;
+ if [ -n "${_mlre:-}" ]; then
+ eval `eval ${_mlre}/usr/bin/tclsh /usr/share/Modules/libexec/modulecmd.tcl bash '"$@"'`;
+ else
+ eval `/usr/bin/tclsh /usr/share/Modules/libexec/modulecmd.tcl bash "$@"`;
+ fi;
+ _mlstatus=$?;
+ if [ -n "${_mlIFS+x}" ]; then
+ IFS=$_mlIFS;
+ else
+ unset IFS;
+ fi;
+ unset _mlre _mlv _mlrv _mlIFS;
+ if [ -n "${_mlshdbg:-}" ]; then
+ set -$_mlshdbg;
+ fi;
+ unset _mlshdbg;
+ return $_mlstatus
+}
+#!/bin/bash
+
+# Testing script for crawler.c
+# Author: Luca Lit
+# Date: Feb 7, 2020
+#
+# usage: bash -v testing.sh
+
+# Define variables
+seedURL=http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/index.html
+diffseedURL=http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/A.html
+externalURL=www.google.com
+Wiki=http://old-www.cs.dartmouth.edu/~cs50/data/tse/wikipedia/
+
+# Uncomment the following if you want to test them
+
+#seedURL2=http://old-www.cs.dartmouth.edu/~cs50/index.html
+#seedURL3=http://old-www.cs.dartmouth.edu/~cs50/data/tse/wikipedia/
+#seedURL4=http://old-www.cs.dartmouth.edu/~cs50/data/tse/toscrape/index.html
+
+# making a directory called data to store testfiles in 
+mkdir data
+mkdir: cannot create directory ‘data’: File exists
+mkdir ./data/testA0
+mkdir ./data/testA1
+mkdir ./data/testA2
+mkdir ./data/testA3
+mkdir ./data/testA4
+mkdir ./data/testA5
+mkdir ./data/testB
+mkdir ./data/testC
+
+echo
+
+
+#####################################
+### Test cases that should fail ###
+
+# 1 argument
+echo "Testing with 1 argument:"
+Testing with 1 argument:
+./crawler
+Incorrect usage. Please make sure to supply 4 arguments: ./crawler <seedURL> <pageDirectory> <maxDepth>
+echo
+
+
+# 2 arguments
+echo "Testing with 2 arguments:"
+Testing with 2 arguments:
+./crawler $seedURL
+Incorrect usage. Please make sure to supply 4 arguments: ./crawler <seedURL> <pageDirectory> <maxDepth>
+echo
+
+
+# 3 arguments
+echo "Testing with 3 arguments:"
+Testing with 3 arguments:
+./crawler $seedURL ./data/testA0
+Incorrect usage. Please make sure to supply 4 arguments: ./crawler <seedURL> <pageDirectory> <maxDepth>
+echo
+
+
+# 4 arguments + non existent server
+echo "Testing with 4 arguments + non-existent server:"
+Testing with 4 arguments + non-existent server:
+./crawler invalidserver ./data/testA0 2
+Could not verify URL to be internal to our domain.
+echo
+
+
+# 4 arguments + externalURL
+echo "Testing with 4 arguments + externalURL:"
+Testing with 4 arguments + externalURL:
+./crawler $externalURL ./data/testA0 2
+Could not verify URL to be internal to our domain.
+echo
+
+
+# 4 arguments + valid server but non-existent page
+echo "Testing with 4 arguments + valid server but non-existent page:"
+Testing with 4 arguments + valid server but non-existent page:
+./crawler http://old-www.cs.dartmouth.edu/~cs50/ ./data/testA0 2
+New page fetched!
+Number of pages visited: 1
+Page saved!
+Scanning pages now...
+Embedded URL at depth 0 is: http://old-www.cs.dartmouth.edu/~cs50/
+Embedded URL at depth 0 is: http://old-www.cs.dartmouth.edu/~tprioleau/
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+Failed to read page
+Crawl complete.
+echo
+
+
+# 4 arguments + invalid page directory
+echo "Testing with 4 arguments + invalid directory to save into:"
+Testing with 4 arguments + invalid directory to save into:
+./crawler $seedURL randomfilename 2
+Invalid page directory. Check that it exists and is writable.
+echo
+
+
+
+######################################
+### Test cases that should pass ####
+
+# seedURL at depth 0
+echo "Testing 4 arguments + seedURL + depth(0): "
+Testing 4 arguments + seedURL + depth(0): 
+./crawler $seedURL ./data/testA0 0
+New page fetched!
+Number of pages visited: 1
+Page saved!
+Crawl complete.
+echo "Results saved to ./data/testA0"
+Results saved to ./data/testA0
+echo
+
+
+# seedURL at depth 1
+echo "Testing 4 arguments + seedURL + depth(1): "
+Testing 4 arguments + seedURL + depth(1): 
+./crawler $seedURL ./data/testA1 1
+New page fetched!
+Number of pages visited: 1
+Page saved!
+Scanning pages now...
+Embedded URL at depth 0 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/A.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+New page fetched!
+Number of pages visited: 2
+Page saved!
+Crawl complete.
+echo "Results saved to ./data/testA1"
+Results saved to ./data/testA1
+echo
+
+
+# seedURL at depth 2
+echo "Testing 4 arguments + seedURL + depth(2): "
+Testing 4 arguments + seedURL + depth(2): 
+./crawler $seedURL ./data/testA2 2
+New page fetched!
+Number of pages visited: 1
+Page saved!
+Scanning pages now...
+Embedded URL at depth 0 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/A.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+New page fetched!
+Number of pages visited: 2
+Page saved!
+Scanning pages now...
+Embedded URL at depth 1 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/B.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+Embedded URL at depth 1 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/index.html
+New page fetched!
+Number of pages visited: 3
+Page saved!
+Crawl complete.
+echo "Results saved to ./data/testA2"
+Results saved to ./data/testA2
+echo
+
+
+# seedURL at depth 3
+echo "Testing 4 arguments + seedURL + depth(3): "
+Testing 4 arguments + seedURL + depth(3): 
+./crawler $seedURL ./data/testA3 3
+New page fetched!
+Number of pages visited: 1
+Page saved!
+Scanning pages now...
+Embedded URL at depth 0 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/A.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+New page fetched!
+Number of pages visited: 2
+Page saved!
+Scanning pages now...
+Embedded URL at depth 1 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/B.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+Embedded URL at depth 1 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/index.html
+New page fetched!
+Number of pages visited: 3
+Page saved!
+Scanning pages now...
+Embedded URL at depth 2 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/C.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+Embedded URL at depth 2 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/D.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+Embedded URL at depth 2 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/E.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+Embedded URL at depth 2 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/index.html
+New page fetched!
+Number of pages visited: 4
+Page saved!
+New page fetched!
+Number of pages visited: 5
+Page saved!
+New page fetched!
+Number of pages visited: 6
+Page saved!
+Crawl complete.
+echo "Results saved to ./data/testA3"
+Results saved to ./data/testA3
+echo
+
+
+# seedURL at depth 4
+echo "Testing 4 arguments + seedURL + depth(4): "
+Testing 4 arguments + seedURL + depth(4): 
+./crawler $seedURL ./data/testA4 4
+New page fetched!
+Number of pages visited: 1
+Page saved!
+Scanning pages now...
+Embedded URL at depth 0 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/A.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+New page fetched!
+Number of pages visited: 2
+Page saved!
+Scanning pages now...
+Embedded URL at depth 1 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/B.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+Embedded URL at depth 1 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/index.html
+New page fetched!
+Number of pages visited: 3
+Page saved!
+Scanning pages now...
+Embedded URL at depth 2 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/C.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+Embedded URL at depth 2 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/D.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+Embedded URL at depth 2 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/E.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+Embedded URL at depth 2 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/index.html
+New page fetched!
+Number of pages visited: 4
+Page saved!
+Scanning pages now...
+Embedded URL at depth 3 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/F.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+Embedded URL at depth 3 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/G.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+Embedded URL at depth 3 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/A.html
+Embedded URL at depth 3 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/index.html
+New page fetched!
+Number of pages visited: 5
+Page saved!
+New page fetched!
+Number of pages visited: 6
+Page saved!
+New page fetched!
+Number of pages visited: 7
+Page saved!
+Scanning pages now...
+Embedded URL at depth 3 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/index.html
+New page fetched!
+Number of pages visited: 8
+Page saved!
+Scanning pages now...
+Embedded URL at depth 3 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/D.html
+Embedded URL at depth 3 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/index.html
+Crawl complete.
+echo "Results saved to ./data/testA4"
+Results saved to ./data/testA4
+echo
+
+
+# seedURL at depth 5
+echo "Testing 4 arguments + seedURL + depth(5): "
+Testing 4 arguments + seedURL + depth(5): 
+./crawler $seedURL ./data/testA5 5
+New page fetched!
+Number of pages visited: 1
+Page saved!
+Scanning pages now...
+Embedded URL at depth 0 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/A.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+New page fetched!
+Number of pages visited: 2
+Page saved!
+Scanning pages now...
+Embedded URL at depth 1 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/B.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+Embedded URL at depth 1 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/index.html
+New page fetched!
+Number of pages visited: 3
+Page saved!
+Scanning pages now...
+Embedded URL at depth 2 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/C.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+Embedded URL at depth 2 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/D.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+Embedded URL at depth 2 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/E.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+Embedded URL at depth 2 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/index.html
+New page fetched!
+Number of pages visited: 4
+Page saved!
+Scanning pages now...
+Embedded URL at depth 3 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/F.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+Embedded URL at depth 3 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/G.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+Embedded URL at depth 3 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/A.html
+Embedded URL at depth 3 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/index.html
+New page fetched!
+Number of pages visited: 5
+Page saved!
+Scanning pages now...
+Embedded URL at depth 4 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/H.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+Embedded URL at depth 4 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/index.html
+New page fetched!
+Number of pages visited: 6
+Page saved!
+New page fetched!
+Number of pages visited: 7
+Page saved!
+Scanning pages now...
+Embedded URL at depth 4 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/H.html
+Embedded URL at depth 4 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/index.html
+New page fetched!
+Number of pages visited: 8
+Page saved!
+Scanning pages now...
+Embedded URL at depth 3 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/index.html
+New page fetched!
+Number of pages visited: 9
+Page saved!
+Scanning pages now...
+Embedded URL at depth 3 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/D.html
+Embedded URL at depth 3 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/index.html
+Crawl complete.
+echo "Results saved to ./data/testA5"
+Results saved to ./data/testA5
+echo
+
+
+# different seedURL in same site
+echo "Testing 4 arguments + different seedpage in same site: "
+Testing 4 arguments + different seedpage in same site: 
+./crawler $diffseedURL ./data/testB 1
+New page fetched!
+Number of pages visited: 1
+Page saved!
+Scanning pages now...
+Embedded URL at depth 0 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/B.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+Embedded URL at depth 0 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/index.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+New page fetched!
+Number of pages visited: 2
+Page saved!
+New page fetched!
+Number of pages visited: 3
+Page saved!
+Crawl complete.
+echo "Results saved to ./data/testB"
+Results saved to ./data/testB
+echo
+
+
+# Wikipedia playground at depth 0
+echo "Testing 4 arguments + Wikipedia playground + depth(0): "
+Testing 4 arguments + Wikipedia playground + depth(0): 
+./crawler $Wiki ./data/testC 0
+New page fetched!
+Number of pages visited: 1
+Page saved!
+Crawl complete.
+echo "Results saved to ./data/testC"
+Results saved to ./data/testC
+echo
+
+
+# valgrinding 
+echo "Example of calgrinding to make sure there are no memory leaks: "
+Example of calgrinding to make sure there are no memory leaks: 
+valgrind ./crawler $seedURL ./data/testA2 2
+==3630060== Memcheck, a memory error detector
+==3630060== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==3630060== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==3630060== Command: ./crawler http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/index.html ./data/testA2 2
+==3630060== 
+==3630060== Invalid write of size 2
+==3630060==    at 0x40178E: DirExistence (crawler.c:187)
+==3630060==    by 0x4014AC: main (crawler.c:66)
+==3630060==  Address 0x4a5c2e5 is 21 bytes inside a block of size 22 alloc'd
+==3630060==    at 0x483980B: malloc (vg_replace_malloc.c:309)
+==3630060==    by 0x401740: DirExistence (crawler.c:185)
+==3630060==    by 0x4014AC: main (crawler.c:66)
+==3630060== 
+==3630060== Syscall param openat(filename) points to unaddressable byte(s)
+==3630060==    at 0x498217B: open (open64.c:48)
+==3630060==    by 0x4912F65: _IO_file_open (fileops.c:189)
+==3630060==    by 0x4913120: _IO_file_fopen@@GLIBC_2.2.5 (fileops.c:281)
+==3630060==    by 0x490687C: __fopen_internal (iofopen.c:75)
+==3630060==    by 0x4017A4: DirExistence (crawler.c:189)
+==3630060==    by 0x4014AC: main (crawler.c:66)
+==3630060==  Address 0x4a5c2e6 is 0 bytes after a block of size 22 alloc'd
+==3630060==    at 0x483980B: malloc (vg_replace_malloc.c:309)
+==3630060==    by 0x401740: DirExistence (crawler.c:185)
+==3630060==    by 0x4014AC: main (crawler.c:66)
+==3630060== 
+New page fetched!
+Number of pages visited: 1
+Page saved!
+Scanning pages now...
+Embedded URL at depth 0 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/A.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+New page fetched!
+Number of pages visited: 2
+Page saved!
+Scanning pages now...
+Embedded URL at depth 1 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/B.html
+New webpage inserted into hashtable.
+New webpage inserted into bag.
+Embedded URL at depth 1 is: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/index.html
+New page fetched!
+Number of pages visited: 3
+Page saved!
+Crawl complete.
+==3630060== 
+==3630060== HEAP SUMMARY:
+==3630060==     in use at exit: 0 bytes in 0 blocks
+==3630060==   total heap usage: 667 allocs, 667 frees, 126,072 bytes allocated
+==3630060== 
+==3630060== All heap blocks were freed -- no leaks are possible
+==3630060== 
+==3630060== For lists of detected and suppressed errors, rerun with: -s
+==3630060== ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)
+

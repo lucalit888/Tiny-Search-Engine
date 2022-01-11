@@ -1,0 +1,224 @@
+
+********************** TESTING FILE OUTPUT *************************
+
+--------------------------------------------------------------------
+1) Test result for invalid number of arguments supplied by user:
+
+Testing ./indexer 6 6 3
+Incorrect number of arguments inputted. Usage: ./indexer pageDirectory indexFilename.
+Testing ./indextest 5 3 5 
+Incorrect number of arguments inputted. Usage: ./indextest oldIndexFilename newIndexFilename.
+
+--------------------------------------------------------------------
+2) Testing incorrect inputs (i.e. invalid directory):
+
+Testing ./indexer falsedirectory somefilename
+Invalid directory. Please provide valid one.
+
+--------------------------------------------------------------------
+3) Testing incorrect inputs (i.e. directory not produced by crawler):
+
+Testing ./indexer ../libcs50 somefilename
+Directory not produced by Crawler
+
+--------------------------------------------------------------------
+4) Testing a correct example on the following directory '~cs50/data/tse-output/letters-depth-1' : 
+
+4(a) Testing ./indexer ~cs50/data/tse-output/letters-depth-1 testingfile1:
+
+Opening file '/net/ifs-users/cs50/data/tse-output/letters-depth-1/.'
+Failed to read the URL
+Continuing to the next file ... 
+
+Opening file '/net/ifs-users/cs50/data/tse-output/letters-depth-1/..'
+Failed to read the URL
+Continuing to the next file ... 
+
+Opening file '/net/ifs-users/cs50/data/tse-output/letters-depth-1/2'
+URL: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/A.html 
+Depth: 1 
+HTML: <html>
+<title>A</title>
+A is for <a href=https://en.wikipedia.org/wiki/Algorithm>Algorithm</a>.
+<a href=B.html>B</a>
+<a href=index.html>home</a>
+</html>
+
+ 
+Opening file '/net/ifs-users/cs50/data/tse-output/letters-depth-1/.crawler'
+Failed to read the URL
+Continuing to the next file ... 
+
+Opening file '/net/ifs-users/cs50/data/tse-output/letters-depth-1/1'
+URL: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/index.html 
+Depth: 0 
+HTML: <html>
+<title>home</title>
+This is the home page for a CS50 TSE playground.
+<a href=A.html>A</a>
+</html>
+
+ 
+Verifying that indexer worked:
+
+for 2 1 1 1
+algorithm 2 1
+this 1 1
+page 1 1
+the 1 1
+playground 1 1
+tse 1 1
+home 2 1 1 2
+
+--------------------------------------------------------------------
+4(b) Testing ./indextest testingfile1 testingfile2:
+
+To verify  indextest works well, we will look at the results of both files:
+
+Results of testingfile1 :
+
+for 2 1 1 1
+algorithm 2 1
+this 1 1
+page 1 1
+the 1 1
+playground 1 1
+tse 1 1
+home 2 1 1 2
+
+Results of testingfile2 :
+
+for 1 1 2 1
+algorithm 2 1
+this 1 1
+page 1 1
+the 1 1
+playground 1 1
+tse 1 1
+home 1 2 2 1
+
+--------------------------------------------------------------------
+4(c) Testing if there are any differences between the two files: 
+
+Sorting the two files and comparing them ...
+There are no differences.
+
+--------------------------------------------------------------------
+Valgrinding to show there are no memory leaks: 
+
+==2794013== Memcheck, a memory error detector
+==2794013== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==2794013== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==2794013== Command: ./indexer /net/ifs-users/cs50/data/tse-output/letters-depth-4 testingfile1
+==2794013== 
+Opening file '/net/ifs-users/cs50/data/tse-output/letters-depth-4/.'
+Failed to read the URL
+Continuing to the next file ... 
+
+Opening file '/net/ifs-users/cs50/data/tse-output/letters-depth-4/..'
+Failed to read the URL
+Continuing to the next file ... 
+
+Opening file '/net/ifs-users/cs50/data/tse-output/letters-depth-4/6'
+URL: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/F.html 
+Depth: 4 
+HTML: <html>
+<title>F</title>
+F is for <a href=https://en.wikipedia.org/wiki/Fast_Fourier_transform>Fast Fourier transform</a>.
+<a href=H.html>H</a>
+<a href=index.html>home</a>
+</html>
+
+ 
+Opening file '/net/ifs-users/cs50/data/tse-output/letters-depth-4/2'
+URL: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/A.html 
+Depth: 1 
+HTML: <html>
+<title>A</title>
+A is for <a href=https://en.wikipedia.org/wiki/Algorithm>Algorithm</a>.
+<a href=B.html>B</a>
+<a href=index.html>home</a>
+</html>
+
+ 
+Opening file '/net/ifs-users/cs50/data/tse-output/letters-depth-4/8'
+URL: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/C.html 
+Depth: 3 
+HTML: <html>
+<title>C</title>
+C is for <a href=https://en.wikipedia.org/wiki/Computational_biology>Computational biology</a>.
+<a href=D.html>D</a>
+<a href=index.html>home</a>
+</html>
+
+ 
+Opening file '/net/ifs-users/cs50/data/tse-output/letters-depth-4/3'
+URL: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/B.html 
+Depth: 2 
+HTML: <html>
+<title>B</title>
+B is for <a href=https://en.wikipedia.org/wiki/Breadth-first_search>Breadth-first search</a>.
+<a href=C.html>C</a>
+<a href=D.html>D</a>
+<a href=E.html>E</a>
+<a href=index.html>home</a>
+</html>
+
+ 
+Opening file '/net/ifs-users/cs50/data/tse-output/letters-depth-4/5'
+URL: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/G.html 
+Depth: 4 
+HTML: <html>
+<title>G</title>
+G is for <a href=https://en.wikipedia.org/wiki/Graph_traversal>Graph traversal</a>.
+<a href=H.html>H</a>
+<a href=index.html>home</a>
+</html>
+
+ 
+Opening file '/net/ifs-users/cs50/data/tse-output/letters-depth-4/7'
+URL: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/D.html 
+Depth: 3 
+HTML: <html>
+<title>D</title>
+D is for <a href=https://en.wikipedia.org/wiki/Depth-first_search>Depth-first search</a>.
+<a href=index.html>home</a>
+</html>
+
+ 
+Opening file '/net/ifs-users/cs50/data/tse-output/letters-depth-4/.crawler'
+Failed to read the URL
+Continuing to the next file ... 
+
+Opening file '/net/ifs-users/cs50/data/tse-output/letters-depth-4/4'
+URL: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/E.html 
+Depth: 3 
+HTML: <html>
+<title>E</title>
+E is for <a href=https://en.wikipedia.org/wiki/ENIAC>ENIAC</a>.
+<a href=F.html>F</a>
+<a href=G.html>G</a>
+<a href=A.html>A</a>
+<a href=index.html>home</a>
+</html>
+
+ 
+Opening file '/net/ifs-users/cs50/data/tse-output/letters-depth-4/1'
+URL: http://old-www.cs.dartmouth.edu/~cs50/data/tse/letters/index.html 
+Depth: 0 
+HTML: <html>
+<title>home</title>
+This is the home page for a CS50 TSE playground.
+<a href=A.html>A</a>
+</html>
+
+ 
+==2794013== 
+==2794013== HEAP SUMMARY:
+==2794013==     in use at exit: 0 bytes in 0 blocks
+==2794013==   total heap usage: 1,632 allocs, 1,632 frees, 252,069 bytes allocated
+==2794013== 
+==2794013== All heap blocks were freed -- no leaks are possible
+==2794013== 
+==2794013== For lists of detected and suppressed errors, rerun with: -s
+==2794013== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
